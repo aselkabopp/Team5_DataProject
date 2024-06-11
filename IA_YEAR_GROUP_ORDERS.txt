@@ -1,0 +1,28 @@
+create or replace view "TARGITO_207F62E1-FC2D-4D55-9C5C-B800034DCC62".ANALYSIS.IA_YEAR_GROUP_ORDERS(
+	CONTACT_ID,
+	GENDER_NEW,
+	SOURCE,
+	YR_GROUP,
+	PREVIOUS_YR_GROUP,
+	NUMBER_OF_ORDERS,
+	TOTAL_SUM,
+	TOTAL_VAT_SUM,
+	TOTAL_AVG,
+	TOTAL_VAT_AVG
+) as 
+select 
+    ord.CONTACT_ID, 
+    cust.gender_new,
+    cust.source,
+    CAST(CONCAT(DATE_PART(YEAR, ord.CREATED_DATE), '-01-01') as date) as yr_group,
+    CAST(CONCAT(DATE_PART(YEAR, ord.CREATED_DATE)-1, '-01-01') as date) as previous_yr_group,
+    count(ord.order_id) as number_of_orders,
+    sum(ord.TOTAL) as total_sum,
+    sum(ord.TOTAL_VAT) as total_vat_sum,
+    avg(ord.TOTAL) as total_avg,
+    avg(ord.TOTAL_VAT) as total_vat_avg
+from "TARGITO_207F62E1-FC2D-4D55-9C5C-B800034DCC62".ANALYSIS.ORDERS_WITH_CONTACT ord
+left join "TARGITO_207F62E1-FC2D-4D55-9C5C-B800034DCC62".ANALYSIS.CUSTOMERS cust
+on ord.contact_id = cust.id
+group by 1, 2, 3, 4, 5
+;

@@ -1,0 +1,38 @@
+create or replace view "TARGITO_207F62E1-FC2D-4D55-9C5C-B800034DCC62".ANALYSIS.IA_HALFYEAR_GROUP_ORDERS(
+	CONTACT_ID,
+	GENDER_NEW,
+	SOURCE,
+	HALFYEAR_PERIOD,
+	PREVIOUS_HALFYEAR_PERIOD,
+	NUMBER_OF_ORDERS,
+	TOTAL_SUM,
+	TOTAL_VAT_SUM,
+	TOTAL_AVG,
+	TOTAL_VAT_AVG
+) as (
+select 
+    o.CONTACT_ID,
+    c.gender_new,
+    c.source,
+    CASE 
+        WHEN DATE_PART(MONTH, o.CREATED_DATE) < 7 
+        THEN CAST(CONCAT(DATE_PART(YEAR, o.CREATED_DATE), '-01-01') as date)
+        ELSE CAST(CONCAT(DATE_PART(YEAR, o.CREATED_DATE), '-07-01') as date)
+    END HALFYEAR_PERIOD,
+    CASE 
+        WHEN DATE_PART(MONTH, o.CREATED_DATE) < 7 
+        THEN CAST(CONCAT(DATE_PART(YEAR, o.CREATED_DATE)-1, '-07-01') as date)
+        ELSE CAST(CONCAT(DATE_PART(YEAR, o.CREATED_DATE), '-01-01') as date)
+    END PREVIOUS_HALFYEAR_PERIOD,
+    count(o.order_id) as number_of_orders,
+    sum(o.TOTAL) as total_sum,
+    sum(o.TOTAL_VAT) as total_vat_sum,
+    avg(o.TOTAL) as total_avg,
+    avg(o.TOTAL_VAT) as total_vat_avg
+from "TARGITO_207F62E1-FC2D-4D55-9C5C-B800034DCC62".ANALYSIS.ORDERS_WITH_CONTACT as o
+left join "TARGITO_207F62E1-FC2D-4D55-9C5C-B800034DCC62".ANALYSIS.CUSTOMERS as c
+on o.contact_id = c.id
+group by 1, 2, 3, 4, 5
+order by 1
+)
+;

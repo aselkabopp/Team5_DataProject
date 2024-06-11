@@ -1,0 +1,33 @@
+create or replace view "TARGITO_207F62E1-FC2D-4D55-9C5C-B800034DCC62".ANALYSIS.IA_QUART_NEW_LOYAL(
+	CONTACT_ID,
+	GENDER_NEW,
+	SOURCE,
+	CUR_QUART,
+	PREV_QUART,
+	NUMBER_OF_ORDERS,
+	TOTAL_SUM,
+	TOTAL_VAT_SUM,
+	TOTAL_AVG,
+	TOTAL_VAT_AVG,
+	NEW_LOYAL
+) as
+(select 
+    a.contact_id, 
+    a.gender_new,
+    a.source,
+    a.CUR_QUART,
+    a.PREV_QUART,
+    a.number_of_orders,
+    a.total_sum,
+    a.total_vat_sum,
+    a.total_avg,
+    a.total_vat_avg,
+    CASE WHEN b.CUR_QUART is null
+        THEN 'New'
+        ELSE 'Loyal'
+    END New_Loyal
+from "TARGITO_207F62E1-FC2D-4D55-9C5C-B800034DCC62".ANALYSIS.IA_QUARTER_GROUP_ORDERS a
+left join "TARGITO_207F62E1-FC2D-4D55-9C5C-B800034DCC62".ANALYSIS.IA_QUARTER_GROUP_ORDERS b
+on a.contact_id = b.contact_id and a.PREV_QUART = b.CUR_QUART
+order by 1)
+;

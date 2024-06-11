@@ -1,0 +1,40 @@
+create or replace view "TARGITO_207F62E1-FC2D-4D55-9C5C-B800034DCC62".ANALYSIS.IA_HALFYEAR_NEW_LOYAL(
+	CONTACT_ID,
+	GENDER_NEW,
+	SOURCE,
+	HALFYEAR_PERIOD,
+	HALFYEAR_LABEL,
+	PREVIOUS_HALFYEAR_PERIOD,
+	NUMBER_OF_ORDERS,
+	TOTAL_SUM,
+	TOTAL_VAT_SUM,
+	TOTAL_AVG,
+	TOTAL_VAT_AVG,
+	NEW_LOYAL
+) as
+select 
+    a.contact_id, 
+    a.gender_new,
+    a.source,
+    a.HALFYEAR_PERIOD,
+    CASE 
+        WHEN DATE_PART(MONTH, a.HALFYEAR_PERIOD) < 7
+        THEN CONCAT('1H ', DATE_PART(YEAR, a.HALFYEAR_PERIOD))
+        ELSE CONCAT('2H ', DATE_PART(YEAR, a.HALFYEAR_PERIOD))
+    END HALFYEAR_LABEL,
+    a.PREVIOUS_HALFYEAR_PERIOD,
+    a.number_of_orders,
+    a.total_sum,
+    a.total_vat_sum,
+    a.total_avg,
+    a.total_vat_avg,
+    CASE WHEN b.HALFYEAR_PERIOD is null
+        THEN 'New'
+        ELSE 'Loyal'
+    END New_Loyal
+from "TARGITO_207F62E1-FC2D-4D55-9C5C-B800034DCC62".ANALYSIS.IA_HALFYEAR_GROUP_ORDERS a
+left join "TARGITO_207F62E1-FC2D-4D55-9C5C-B800034DCC62".ANALYSIS.IA_HALFYEAR_GROUP_ORDERS b
+on a.contact_id = b.contact_id and a.previous_halfyear_period = b.halfyear_period
+order by 1
+
+;
