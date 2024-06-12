@@ -1,0 +1,80 @@
+create or replace view "TARGITO_207F62E1-FC2D-4D55-9C5C-B800034DCC62".ANALYSIS.CONTACTS_LOST(
+	ID,
+	GENDER_NEW,
+	CREATED_DATE,
+	UPDATED_DATE,
+	LAST_ORDER_DATE,
+	IS_OPTED_IN,
+	IS_OPTED_OUT,
+	OPTOUT_DATE,
+	OPTOUT_PERIOD,
+	EMAIL_STO_MOST_ACTIVE,
+	EMAIL_STO_LAST_OPEN,
+	LAST_UPDATE,
+	STATUS,
+	ACTIVE,
+	NAMEDAY,
+	SOURCE_FORMATTED,
+	SOURCE,
+	_AVG_OR_90,
+	_AVG_CR_90,
+	_RFM_R,
+	_RFM_F,
+	_RFM_M,
+	_RFM_SCORE,
+	KAMAN_FB_LEADS,
+	CPC
+) as (
+select 
+    c.ID, 
+    CASE WHEN c.GENDER = 'female' and c.GENDER_TARGITO is null
+       THEN 'F'
+       WHEN c.GENDER = 'male' and c.GENDER_TARGITO is null
+       THEN 'M'
+       WHEN c.GENDER is null and c.GENDER_TARGITO is null
+       THEN 'unknown'
+    ELSE c.GENDER_TARGITO
+    END AS GENDER_NEW,
+    c.CREATED_DATE, 
+    c.UPDATED_DATE, 
+    orders.last_order_date,
+    c.IS_OPTED_IN, 
+    c.IS_OPTED_OUT, 
+    c.OPTOUT_DATE, 
+    CASE
+     WHEN c.IS_OPTED_IN = True AND c.IS_OPTED_OUT = True THEN 
+      DATEDIFF( 'day', 
+      c.CREATED_DATE,
+      c.OPTOUT_DATE)
+     ELSE NULL
+     END as OPTOUT_PERIOD,
+    c.EMAIL_STO_MOST_ACTIVE, 
+    c.EMAIL_STO_LAST_OPEN, 
+    c.LAST_UPDATE, 
+    c.STATUS, 
+    c.ACTIVE, 
+    c.NAMEDAY, 
+    CASE 
+        WHEN Source is null THEN 'unknown' 
+        ELSE Source 
+    END AS SOURCE_FORMATTED,
+    c.SOURCE, 
+    c._AVG_OR_90, 
+    c._AVG_CR_90, 
+    c._RFM_R, 
+    c._RFM_F,
+    c._RFM_M, 
+    c._RFM_SCORE, 
+    c.KAMAN_FB_LEADS, 
+    c.CPC
+from "TARGITO_207F62E1-FC2D-4D55-9C5C-B800034DCC62".PUBLIC.CONTACTS as c
+left join (
+    select
+    contact_id,
+    max(created_date) as last_order_date
+    from "TARGITO_207F62E1-FC2D-4D55-9C5C-B800034DCC62".ANALYSIS.ORDERS_WITH_CONTACT
+    group by 1
+) orders
+on c.id = orders.contact_id
+)
+;
