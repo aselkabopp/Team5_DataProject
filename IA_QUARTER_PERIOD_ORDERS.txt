@@ -1,0 +1,62 @@
+create or replace view "TARGITO_207F62E1-FC2D-4D55-9C5C-B800034DCC62".ANALYSIS.IA_QUARTER_PERIOD_ORDERS(
+	CONTACT_ID,
+	CUR_QUART,
+	TOTAL,
+	SKLAD,
+	GENDER_NEW,
+	SOURCE,
+	STATE
+) as
+select 
+    o.contact_id,
+    o.cur_quart,
+    o.total,
+    o.sklad,
+    CASE WHEN nl.gender_new is NULL or nl.gender_new = 'unknown'
+        THEN 'unknown'
+        ELSE nl.gender_new
+    END gender_new,
+    CASE WHEN nl.source is NULL or nl.source = 'unknown'
+        THEN 'unknown'
+        ELSE nl.source
+    END source,
+    CASE 
+        WHEN nl.new_loyal IS NULL THEN 'No contact'
+        ELSE nl.new_loyal
+    END state
+from (select 
+    contact_id, 
+    CASE 
+        WHEN DATE_PART(QUARTER, CREATED_DATE) = 1
+        THEN CAST(CONCAT(DATE_PART(YEAR, CREATED_DATE), '-01-01') as date)
+        WHEN DATE_PART(QUARTER, CREATED_DATE) = 2
+        THEN CAST(CONCAT(DATE_PART(YEAR, CREATED_DATE), '-04-01') as date)
+        WHEN DATE_PART(QUARTER, CREATED_DATE) = 3
+        THEN CAST(CONCAT(DATE_PART(YEAR, CREATED_DATE), '-07-01') as date)
+        ELSE CAST(CONCAT(DATE_PART(YEAR, CREATED_DATE), '-10-01') as date)
+    END CUR_QUART,
+    total,
+    sklad
+FROM "TARGITO_207F62E1-FC2D-4D55-9C5C-B800034DCC62".ANALYSIS.IA_ORDERS_NEW) o
+left join 
+(select 
+    a.contact_id, 
+    a.gender_new,
+    a.source,
+    a.CUR_QUART,
+    a.PREV_QUART,
+    a.number_of_orders,
+    a.total_sum,
+    a.total_vat_sum,
+    a.total_avg,
+    a.total_vat_avg,
+    CASE WHEN b.CUR_QUART is null
+        THEN 'New'
+        ELSE 'Loyal'
+    END New_Loyal
+from "TARGITO_207F62E1-FC2D-4D55-9C5C-B800034DCC62".ANALYSIS.IA_QUARTER_GROUP_ORDERS a
+left join "TARGITO_207F62E1-FC2D-4D55-9C5C-B800034DCC62".ANALYSIS.IA_QUARTER_GROUP_ORDERS b
+on a.contact_id = b.contact_id and a.PREV_QUART = b.CUR_QUART) nl
+on o.contact_id = nl.contact_id and  o.cur_quart = nl.cur_quart
+
+;

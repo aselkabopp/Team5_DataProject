@@ -12,8 +12,14 @@ create or replace view "TARGITO_207F62E1-FC2D-4D55-9C5C-B800034DCC62".ANALYSIS.I
 ) as (
 select 
     o.CONTACT_ID,
-    c.GENDER_NEW, 
-    c.SOURCE,
+    CASE WHEN c.gender_new is NULL or c.gender_new = 'unknown'
+        THEN 'unknown'
+        ELSE c.gender_new 
+    END gender_new,
+    CASE WHEN c.source is NULL or c.source = 'unknown'
+        THEN 'unknown'
+        ELSE c.source 
+    END source,
     CASE 
         WHEN DATE_PART(QUARTER, o.CREATED_DATE) = 1
         THEN CAST(CONCAT(DATE_PART(YEAR, o.CREATED_DATE), '-01-01') as date)

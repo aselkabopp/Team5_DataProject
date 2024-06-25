@@ -12,8 +12,14 @@ create or replace view "TARGITO_207F62E1-FC2D-4D55-9C5C-B800034DCC62".ANALYSIS.I
 ) as 
 select 
     ord.CONTACT_ID, 
-    cust.gender_new,
-    cust.source,
+    CASE WHEN cust.gender_new is NULL or cust.gender_new = 'unknown'
+        THEN 'unknown'
+        ELSE cust.gender_new 
+    END gender_new,
+    CASE WHEN cust.source is NULL or cust.source = 'unknown'
+        THEN 'unknown'
+        ELSE cust.source
+    END source,
     CAST(CONCAT(DATE_PART(YEAR, ord.CREATED_DATE), '-01-01') as date) as yr_group,
     CAST(CONCAT(DATE_PART(YEAR, ord.CREATED_DATE)-1, '-01-01') as date) as previous_yr_group,
     count(ord.order_id) as number_of_orders,
@@ -25,4 +31,5 @@ from "TARGITO_207F62E1-FC2D-4D55-9C5C-B800034DCC62".ANALYSIS.ORDERS_WITH_CONTACT
 left join "TARGITO_207F62E1-FC2D-4D55-9C5C-B800034DCC62".ANALYSIS.CUSTOMERS cust
 on ord.contact_id = cust.id
 group by 1, 2, 3, 4, 5
+
 ;

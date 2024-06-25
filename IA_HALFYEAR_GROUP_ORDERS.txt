@@ -12,8 +12,14 @@ create or replace view "TARGITO_207F62E1-FC2D-4D55-9C5C-B800034DCC62".ANALYSIS.I
 ) as (
 select 
     o.CONTACT_ID,
-    c.gender_new,
-    c.source,
+    CASE WHEN cust.gender_new is NULL or cust.gender_new = 'unknown'
+        THEN 'unknown'
+        ELSE cust.gender_new 
+    END gender_new,
+    CASE WHEN cust.source is NULL or cust.source = 'unknown'
+        THEN 'unknown'
+        ELSE cust.source
+    END source,
     CASE 
         WHEN DATE_PART(MONTH, o.CREATED_DATE) < 7 
         THEN CAST(CONCAT(DATE_PART(YEAR, o.CREATED_DATE), '-01-01') as date)
@@ -30,8 +36,8 @@ select
     avg(o.TOTAL) as total_avg,
     avg(o.TOTAL_VAT) as total_vat_avg
 from "TARGITO_207F62E1-FC2D-4D55-9C5C-B800034DCC62".ANALYSIS.ORDERS_WITH_CONTACT as o
-left join "TARGITO_207F62E1-FC2D-4D55-9C5C-B800034DCC62".ANALYSIS.CUSTOMERS as c
-on o.contact_id = c.id
+left join "TARGITO_207F62E1-FC2D-4D55-9C5C-B800034DCC62".ANALYSIS.CUSTOMERS as cust
+on o.contact_id = cust.id
 group by 1, 2, 3, 4, 5
 order by 1
 )
