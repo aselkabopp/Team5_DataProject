@@ -1,0 +1,21 @@
+create or replace view "TARGITO_207F62E1-FC2D-4D55-9C5C-B800034DCC62".ANALYSIS.CUSTOMERS(
+	ID,
+	GENDER_NEW,
+	CREATED_DATE,
+	SOURCE,
+	NUMBER_OF_ORDERS
+) as
+(
+select 
+    c.ID, 
+    c.Gender_new,
+    c.CREATED_DATE, 
+    c.SOURCE,
+    count(o.order_id) as number_of_orders
+from "TARGITO_207F62E1-FC2D-4D55-9C5C-B800034DCC62".ANALYSIS.CONTACTS_EXTENDED as c
+inner join "TARGITO_207F62E1-FC2D-4D55-9C5C-B800034DCC62".ANALYSIS.IA_ORDERS_NEW as o
+on c.id = o.contact_id
+group by 1, 2, 3, 4
+)
+
+;

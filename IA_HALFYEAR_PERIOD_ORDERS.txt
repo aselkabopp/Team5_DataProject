@@ -1,0 +1,64 @@
+create or replace view "TARGITO_207F62E1-FC2D-4D55-9C5C-B800034DCC62".ANALYSIS.IA_HALFYEAR_PERIOD_ORDERS(
+	CONTACT_ID,
+	HALFYEAR_PERIOD,
+	HALFYEAR_LABEL,
+	TOTAL,
+	SKLAD,
+	GENDER_NEW,
+	SOURCE,
+	STATE
+) as
+select 
+    o.contact_id,
+    o.halfyear_period,
+    CASE 
+        WHEN DATE_PART(MONTH, o.HALFYEAR_PERIOD) < 7
+        THEN CONCAT(DATE_PART(YEAR, o.HALFYEAR_PERIOD), ' 1H')
+        ELSE CONCAT(DATE_PART(YEAR, o.HALFYEAR_PERIOD), ' 2H')
+    END HALFYEAR_LABEL,
+    o.total,
+    o.sklad,
+    CASE WHEN nl.gender_new is NULL or nl.gender_new = 'unknown'
+        THEN 'unknown'
+        ELSE nl.gender_new
+    END gender_new,
+    CASE WHEN nl.source is NULL or nl.source = 'unknown'
+        THEN 'unknown'
+        ELSE nl.source
+    END source,
+    CASE 
+        WHEN nl.new_loyal IS NULL THEN 'No contact'
+        ELSE nl.new_loyal
+    END state
+from (select 
+    contact_id, 
+    CASE 
+        WHEN DATE_PART(MONTH, CREATED_DATE) < 7 
+        THEN CAST(CONCAT(DATE_PART(YEAR, CREATED_DATE), '-01-01') as date)
+        ELSE CAST(CONCAT(DATE_PART(YEAR, CREATED_DATE), '-07-01') as date)
+    END HALFYEAR_PERIOD,
+    total,
+    sklad
+FROM "TARGITO_207F62E1-FC2D-4D55-9C5C-B800034DCC62".ANALYSIS.IA_ORDERS_NEW) o
+left join 
+(
+select 
+    a.contact_id, 
+    a.gender_new,
+    a.source,
+    a.HALFYEAR_PERIOD,
+    a.PREVIOUS_HALFYEAR_PERIOD,
+    a.number_of_orders,
+    a.total_sum,
+    a.total_vat_sum,
+    a.total_avg,
+    a.total_vat_avg,
+    CASE WHEN b.HALFYEAR_PERIOD is null
+        THEN 'New'
+        ELSE 'Loyal'
+    END New_Loyal
+from "TARGITO_207F62E1-FC2D-4D55-9C5C-B800034DCC62".ANALYSIS.IA_HALFYEAR_GROUP_ORDERS a
+left join "TARGITO_207F62E1-FC2D-4D55-9C5C-B800034DCC62".ANALYSIS.IA_HALFYEAR_GROUP_ORDERS b
+on a.contact_id = b.contact_id and a.previous_halfyear_period = b.halfyear_period
+) nl
+on o.contact_id = nl.contact_id and  o.halfyear_period = nl.halfyear_period;
