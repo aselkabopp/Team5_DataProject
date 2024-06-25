@@ -1,0 +1,46 @@
+create or replace view "TARGITO_207F62E1-FC2D-4D55-9C5C-B800034DCC62".ANALYSIS.MAILING_LAST_STATUS(
+	CONTACT_ID,
+	MAILING_ID,
+	MAILING_DATE,
+	CREATED_DATE,
+	NAME,
+	RAW_DATA,
+	NAME_ORDERING,
+	RANKING,
+	GENDER_NEW,
+	SOURCE
+) as (
+select m.*,
+CASE 
+    WHEN c.gender_new is null
+    THEN 'unknown'
+    ELSE c.gender_new
+END gender_new,
+CASE 
+    WHEN c.source is null
+    THEN 'unknown'
+    ELSE c.source
+END source
+from (
+select *,
+rank() over(partition by mailing_id, contact_id order by mailing_date, created_date desc, name_ordering desc, raw_data) ranking
+from (select 
+    contact_id, 
+    mailing_id, 
+    mailing_date, 
+    created_date,
+    name,
+    raw_data,
+    CASE WHEN name = 'sent' THEN 1
+        WHEN name = 'delivered' THEN 2
+    ELSE 3
+    END name_ordering
+from "TARGITO_207F62E1-FC2D-4D55-9C5C-B800034DCC62".PUBLIC.MAILING_EVENTS
+)
+qualify ranking = 1
+order by 1,2
+) m
+left join "TARGITO_207F62E1-FC2D-4D55-9C5C-B800034DCC62".ANALYSIS.CONTACTS_EXTENDED c
+on m.contact_id = c.id
+)
+;

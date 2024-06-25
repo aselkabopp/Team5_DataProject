@@ -1,0 +1,49 @@
+create or replace view "TARGITO_207F62E1-FC2D-4D55-9C5C-B800034DCC62".ANALYSIS.MAILING_STATISTICS(
+	CONTACT_ID,
+	GENDER_NEW,
+	SOURCE,
+	MAILING_DATE,
+	NUMBER_OF_MAILS,
+	NUMBER_OF_DELIVERED,
+	NUMBER_OF_OPEN,
+	NUMBER_OF_CLICK,
+	NUMBER_OF_UNSUBSCRIBE,
+	NUMBER_OF_OPEN_END,
+	NUMBER_OF_SPAM_COMPAINT
+) as 
+select 
+    m.contact_id, 
+    CASE 
+        WHEN c.gender_new is null
+        THEN 'unknown'
+        ELSE c.gender_new
+    END gender_new,
+    CASE 
+        WHEN c.source is null
+        THEN 'unknown'
+        ELSE c.source
+    END source,
+    DATE_TRUNC('month', m.mailing_date) mailing_date,
+    count(m.mailing_id) number_of_mails,
+    sum(CASE WHEN m.last_event_status = 'delivered' THEN 1 ELSE 0 END) number_of_delivered,
+    sum(CASE WHEN m.action = 'open' THEN 1 ELSE 0 END) number_of_open,
+    sum(CASE WHEN m.action = 'click' THEN 1 ELSE 0 END) number_of_click,
+    sum(CASE WHEN m.action = 'unsubscribe' THEN 1 ELSE 0 END) number_of_unsubscribe,
+    sum(CASE WHEN m.action = 'open_end' THEN 1 ELSE 0 END) number_of_open_end,
+    sum(CASE WHEN m.action = 'spam_complaint' THEN 1 ELSE 0 END) number_of_spam_compaint
+from (select 
+    l_stat.contact_id, 
+    l_stat.mailing_id, 
+    l_stat.mailing_date as mailing_date,
+    l_stat.name as last_event_status,
+    act.name as action,
+    count(*)
+from "TARGITO_207F62E1-FC2D-4D55-9C5C-B800034DCC62".ANALYSIS.MAILING_LAST_STATUS l_stat
+left join "TARGITO_207F62E1-FC2D-4D55-9C5C-B800034DCC62".PUBLIC.MAILING_ACTIONS act
+on l_stat.contact_id = act.contact_id  and l_stat.mailing_id = act.mailing_id 
+group by 1, 2, 3, 4, 5
+order by 1, 2) m
+left join "TARGITO_207F62E1-FC2D-4D55-9C5C-B800034DCC62".ANALYSIS.CONTACTS_EXTENDED c
+on m.contact_id = c.id
+group by 1, 2, 3, 4
+order by 1, 2;
