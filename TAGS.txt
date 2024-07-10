@@ -1,0 +1,49 @@
+import snowflake.snowpark as snowpark
+from snowflake.snowpark.functions import col
+from snowflake.snowpark.types import StructType, StructField, StringType
+import ast  # Library to parse string representation of lists
+
+def main(session: snowpark.Session): 
+    # Define the fully qualified table name including the database
+    tableName = '"TARGITO_207F62E1-FC2D-4D55-9C5C-B800034DCC62".PUBLIC.MAILING_TEMPLATES'
+    
+    # Load the table into a dataframe
+    dataframe = session.table(tableName)
+    
+    # Select only the 'TAGS' column from the dataframe
+    tags_dataframe = dataframe.select(col("TAGS"))
+    
+    # Collect Snowflake dataframe into a list of dictionaries
+    rows = tags_dataframe.collect()
+
+    # Step 1: Extract individual tags from the string representation of lists
+    all_tags = []
+    for row in rows:
+        for tag_list_string in row:
+            tag_list = ast.literal_eval(tag_list_string)  # Parse string to list
+            all_tags.extend(tag_list)  # Extend the list with individual tags
+    
+    # Step 2: Remove any remaining square brackets and whitespace from tags
+    cleaned_tags = [tag.strip("[]") for tag in all_tags]
+    
+    # Step 3: Extract unique values
+    unique_values = list(set(cleaned_tags))
+    
+    # Step 4: Create a Snowpark dataframe with each unique tag as a separate row
+    # Define schema for the dataframe
+    schema = StructType([
+        StructField("value", StringType())
+    ])
+    
+    # Prepare data as a list of dictionaries
+    data = [{"value": value} for value in unique_values]
+    
+    # Create Snowpark dataframe
+    new_snow_df = session.create_dataframe(data, schema)
+
+    tableName = '"TARGITO_207F62E1-FC2D-4D55-9C5C-B800034DCC62".ANALYSIS.UNIQUE_TAGS'
+  
+    new_snow_df.write.mode("overwrite").save_as_table(tableName)
+    
+    # Return the Snowpark dataframe (optional, if needed further)
+    return new_snow_df
